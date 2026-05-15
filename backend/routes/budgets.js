@@ -60,4 +60,27 @@ router.delete('/:id', (req, res) => {
   });
 });
 
+router.get('/monthly', (req, res) => {
+  const { month } = req.query;
+  db.get('SELECT * FROM monthly_budgets WHERE month = ?', [month], (err, row) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json(row || { amount: 0 });
+  });
+});
+
+router.post('/monthly', (req, res) => {
+  const { amount, month } = req.body;
+  const stmt = db.prepare('INSERT OR REPLACE INTO monthly_budgets (amount, month) VALUES (?, ?)');
+  stmt.run(amount, month, function(err) {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json({ id: this.lastID, amount, month });
+  });
+});
+
 module.exports = router;

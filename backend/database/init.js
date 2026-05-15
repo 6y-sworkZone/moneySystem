@@ -44,6 +44,13 @@ db.serialize(() => {
     UNIQUE(category, month)
   )`);
 
+  db.run(`CREATE TABLE IF NOT EXISTS monthly_budgets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    amount REAL NOT NULL,
+    month TEXT NOT NULL UNIQUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
   db.run(`CREATE TABLE IF NOT EXISTS investments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     account_id INTEGER NOT NULL,

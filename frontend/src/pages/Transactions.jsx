@@ -17,7 +17,7 @@ function Transactions() {
   const [selectedAccount, setSelectedAccount] = useState('')
   const [filters, setFilters] = useState({ account_id: '', start_date: '', end_date: '' })
   const [formData, setFormData] = useState({
-    account_id: '', type: 'expense', amount: '', category: '', merchant: '', note: '', date: new Date().toISOString().split('T')[0]
+    account_id: '', type: 'expense', amount: '', category: '', merchant: '', tags: '', note: '', date: new Date().toISOString().split('T')[0]
   })
 
   useEffect(() => {
@@ -106,7 +106,7 @@ function Transactions() {
   const resetForm = () => {
     setEditingTransaction(null)
     setFormData({
-      account_id: '', type: 'expense', amount: '', category: '', merchant: '', note: '', date: new Date().toISOString().split('T')[0]
+      account_id: '', type: 'expense', amount: '', category: '', merchant: '', tags: '', note: '', date: new Date().toISOString().split('T')[0]
     })
   }
 
@@ -150,6 +150,7 @@ function Transactions() {
               <th>金额</th>
               <th>分类</th>
               <th>商户</th>
+              <th>标签</th>
               <th>备注</th>
               <th>操作</th>
             </tr>
@@ -165,6 +166,13 @@ function Transactions() {
                 </td>
                 <td>{t.category}</td>
                 <td>{t.merchant || '-'}</td>
+                <td>
+                  {t.tags ? t.tags.split(',').map((tag, idx) => (
+                    <span key={idx} className="tag" style={{ background: '#e3f2fd', color: '#1976d2', marginRight: '4px', display: 'inline-block', marginBottom: '2px' }}>
+                      {tag.trim()}
+                    </span>
+                  )) : '-'}
+                </td>
                 <td>{t.note || '-'}</td>
                 <td>
                   <button className="btn btn-sm btn-primary" style={{ marginRight: '5px' }} onClick={() => handleEdit(t)}>编辑</button>
@@ -221,6 +229,10 @@ function Transactions() {
                 <div className="form-group">
                   <label>商户</label>
                   <input type="text" value={formData.merchant} onChange={e => setFormData({ ...formData, merchant: e.target.value })} placeholder="输入商户名可自动匹配分类" />
+                </div>
+                <div className="form-group">
+                  <label>标签</label>
+                  <input type="text" value={formData.tags} onChange={e => setFormData({ ...formData, tags: e.target.value })} placeholder="多个标签用逗号分隔，如：餐饮,外卖" />
                 </div>
                 <div className="form-group">
                   <label>备注</label>

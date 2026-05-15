@@ -11,6 +11,8 @@ const accountTypes = [
 function Accounts() {
   const [accounts, setAccounts] = useState([])
   const [showModal, setShowModal] = useState(false)
+  const [showImportModal, setShowImportModal] = useState(false)
+  const [importFile, setImportFile] = useState(null)
   const [editingAccount, setEditingAccount] = useState(null)
   const [formData, setFormData] = useState({
     name: '', type: 'cash', balance: 0, currency: 'CNY', color: '', description: ''
@@ -26,6 +28,26 @@ function Accounts() {
       setAccounts(res.data)
     } catch (error) {
       console.error('加载账户失败:', error)
+    }
+  }
+
+  const handleImport = async (e) => {
+    e.preventDefault()
+    if (!importFile) {
+      alert('请选择文件')
+      return
+    }
+    const formData = new FormData()
+    formData.append('file', importFile)
+    try {
+      const res = await accountsAPI.importBalances(formData)
+      alert(`成功更新 ${res.data.updated} 个账户${res.data.errors.length > 0 ? `，${res.data.errors.length} 个失败` : ''}`)
+      loadAccounts()
+      setShowImportModal(false)
+      setImportFile(null)
+    } catch (error) {
+      console.error('导入失败:', error)
+      alert('导入失败')
     }
   }
 
@@ -79,9 +101,12 @@ function Accounts() {
     <div>
       <div className="page-header">
         <h1>💳 账户管理</h1>
-        <button className="btn btn-primary" onClick={() => { resetForm(); setShowModal(true); }}>
-          + 添加账户
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button className="btn" onClick={() => setShowImportModal(true)}>📁 批量更新余额</button>
+          <button className="btn btn-primary" onClick={() => { resetForm(); setShowModal(true); }}>
+            + 添加账户
+          </button>
+        </div>
       </div>
 
       <div className="account-list">
@@ -140,6 +165,34 @@ function Accounts() {
               <div className="modal-footer">
                 <button type="button" className="btn" onClick={() => setShowModal(false)}>取消</button>
                 <button type="submit" className="btn btn-primary">保存</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showImportModal && (
+        <div className="modal-overlay" onClick={() => setShowImportModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>批量更新账户余额</h3>
+              <button className="modal-close" onClick={() => setShowImportModal(false)}>×</button>
+            </div>
+            <form onSubmit={handleImport}>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label>选择CSV文件</label>
+                  <input type="file" accept=".csv" onChange={e => setImportFile(e.target.files[0])} required />
+                </div>
+                <div style={{ background: '#f5f5f5', padding: '12px', borderRadius: '4px', fontSize: '12px' }}>
+                  <p style={{ margin: '0 0 8px 0', fontWeight: 'bold' }}>CSV格式说明：</p>
+                  <p style={{ margin: '4px 0' }}>列名支持: id, account_id, 账户ID, balance, 余额</p>
+                  <p style={{ margin: '4px 0' }}>示例: id,balance<br/>1,1000.00<br/>2,500.00</p>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn" onClick={() => setShowImportModal(false)}>取消</button>
+                <button type="submit" className="btn btn-primary">导入</button>
               </div>
             </form>
           </div>

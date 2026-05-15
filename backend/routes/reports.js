@@ -100,4 +100,42 @@ router.get('/account-balances', (req, res) => {
   });
 });
 
+router.get('/net-worth-trend', (req, res) => {
+  const { year } = req.query;
+  
+  db.all(`
+    SELECT 
+      strftime('%Y-%m', date) as month,
+      type,
+      SUM(amount) as total
+    FROM transactions
+    WHERE strftime('%Y', date) = ?
+    GROUP BY month, type
+    ORDER BY month
+  `, [year], (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    
+    const months = [];
+    for (let i = 1; i <= 12; i++) {
+      months.push(`${year}-${String(i).padStart(2, '0')}`);
+    }
+    
+    let netWorth = 0;
+    const trend = months.map(month => {
+      const income = rows.find(r => r.month === month && r.type === 'income')?.total || 0;
+      const expense = rows.find(r => r.month === month && r.type === 'expense')?.total || 0;
+      netWorth += (income - expense);
+      return {
+        month,
+        netWorth: parseFloat(netWorth.toFixed(2))
+      };
+    });
+    
+    res.json(trend);
+  });
+});
+
 module.exports = router;

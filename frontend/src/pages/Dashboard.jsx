@@ -7,6 +7,7 @@ function Dashboard() {
   const [categoryBreakdown, setCategoryBreakdown] = useState([])
   const [netWorth, setNetWorth] = useState([])
   const [accountBalances, setAccountBalances] = useState([])
+  const [netWorthTrend, setNetWorthTrend] = useState([])
 
   const now = new Date()
   const currentYear = now.getFullYear()
@@ -18,16 +19,18 @@ function Dashboard() {
 
   const loadData = async () => {
     try {
-      const [summaryRes, categoryRes, netWorthRes, accountsRes] = await Promise.all([
+      const [summaryRes, categoryRes, netWorthRes, accountsRes, trendRes] = await Promise.all([
         reportsAPI.getMonthlySummary(currentYear, currentMonth),
         reportsAPI.getCategoryBreakdown(currentYear, currentMonth),
         reportsAPI.getNetWorth(),
         reportsAPI.getAccountBalances(),
+        reportsAPI.getNetWorthTrend(currentYear),
       ])
       setSummary(summaryRes.data)
       setCategoryBreakdown(categoryRes.data)
       setNetWorth(netWorthRes.data)
       setAccountBalances(accountsRes.data)
+      setNetWorthTrend(trendRes.data)
     } catch (error) {
       console.error('加载数据失败:', error)
     }
@@ -67,6 +70,21 @@ function Dashboard() {
       type: 'pie',
       radius: '60%',
       data: accountBalances.filter(a => a.balance > 0).map(a => ({ value: a.balance, name: a.name })),
+    }]
+  }
+
+  const netWorthTrendOption = {
+    title: { text: '净值趋势', left: 'center' },
+    tooltip: { trigger: 'axis', formatter: '{b}: ¥{c}' },
+    xAxis: { type: 'category', data: netWorthTrend.map(d => d.month.split('-')[1] + '月') },
+    yAxis: { type: 'value' },
+    series: [{
+      type: 'line',
+      data: netWorthTrend.map(d => d.netWorth),
+      smooth: true,
+      areaStyle: { opacity: 0.3 },
+      itemStyle: { color: '#722ed1' },
+      lineStyle: { color: '#722ed1' }
     }]
   }
 
@@ -116,6 +134,12 @@ function Dashboard() {
           <div className="chart-container">
             <ReactECharts option={accountPieOption} style={{ height: '100%' }} />
           </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="chart-container">
+          <ReactECharts option={netWorthTrendOption} style={{ height: '100%' }} />
         </div>
       </div>
     </div>

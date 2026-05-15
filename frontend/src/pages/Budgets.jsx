@@ -13,7 +13,10 @@ function Budgets() {
   const [month, setMonth] = useState(currentMonth)
   const [budgets, setBudgets] = useState([])
   const [comparison, setComparison] = useState([])
+  const [monthlyBudget, setMonthlyBudget] = useState(0)
   const [showModal, setShowModal] = useState(false)
+  const [showMonthlyModal, setShowMonthlyModal] = useState(false)
+  const [monthlyBudgetInput, setMonthlyBudgetInput] = useState('')
   const [formData, setFormData] = useState({ category: '', amount: '' })
 
   useEffect(() => {
@@ -22,14 +25,27 @@ function Budgets() {
 
   const loadBudgets = async () => {
     try {
-      const [budgetsRes, comparisonRes] = await Promise.all([
+      const [budgetsRes, comparisonRes, monthlyRes] = await Promise.all([
         budgetsAPI.getAll(month),
         budgetsAPI.getComparison(month),
+        budgetsAPI.getMonthlyBudget(month),
       ])
       setBudgets(budgetsRes.data)
       setComparison(comparisonRes.data)
+      setMonthlyBudget(monthlyRes.data.amount || 0)
     } catch (error) {
       console.error('加载预算失败:', error)
+    }
+  }
+
+  const handleMonthlyBudgetSubmit = async (e) => {
+    e.preventDefault()
+    try {
+      await budgetsAPI.setMonthlyBudget(parseFloat(monthlyBudgetInput), month)
+      setMonthlyBudget(parseFloat(monthlyBudgetInput))
+      setShowMonthlyModal(false)
+    } catch (error) {
+      console.error('保存月度总预算失败:', error)
     }
   }
 
@@ -56,8 +72,9 @@ function Budgets() {
     }
   }
 
-  const totalBudget = budgets.reduce((sum, b) => sum + b.amount, 0)
+  const totalCategoryBudget = budgets.reduce((sum, b) => sum + b.amount, 0)
   const totalActual = comparison.reduce((sum, c) => sum + c.actual, 0)
+  const totalBudget = monthlyBudget || totalCategoryBudget
   const remaining = totalBudget - totalActual
 
   return (
@@ -73,14 +90,19 @@ function Budgets() {
               return <option key={m} value={m}>{m}</option>
             })}
           </select>
-          <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ 设置预算</button>
+          <button className="btn" onClick={() => { setMonthlyBudgetInput(String(monthlyBudget)); setShowMonthlyModal(true); }}>设置月度总预算</button>
+          <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ 分类预算</button>
         </div>
       </div>
 
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="label">总预算</div>
-          <div className="value" style={{ color: '#1890ff' }}>¥{totalBudget.toFixed(2)}</div>
+          <div className="label">月度总预算</div>
+          <div className="value" style={{ color: '#722ed1' }}>¥{monthlyBudget.toFixed(2)}</div>
+        </div>
+        <div className="stat-card">
+          <div className="label">已分配分类预算</div>
+          <div className="value" style={{ color: '#1890ff' }}>¥{totalCategoryBudget.toFixed(2)}</div>
         </div>
         <div className="stat-card">
           <div className="label">已支出</div>
@@ -89,10 +111,6 @@ function Budgets() {
         <div className="stat-card">
           <div className="label">剩余预算</div>
           <div className="value" style={{ color: remaining >= 0 ? '#52c41a' : '#ff4d4f' }}>¥{remaining.toFixed(2)}</div>
-        </div>
-        <div className="stat-card">
-          <div className="label">使用进度</div>
-          <div className="value">{totalBudget > 0 ? ((totalActual / totalBudget) * 100).toFixed(1) : 0}%</div>
         </div>
       </div>
 
@@ -171,6 +189,34 @@ function Budgets() {
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn" onClick={() => setShowModal(false)}>取消</button>
+                <button type="submit" className="btn btn-primary">保存</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showMonthlyModal && (
+        <div className="modal-overlay" onClick={() => setShowMonthlyModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>设置月度总预算</h3>
+              <button className="modal-close" onClick={() => setShowMonthlyModal(false)}>×</button>
+            </div>
+            <form onSubmit={handleMonthlyBudgetSubmit}>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label>月度总预算金额</label>
+                  <input type="number" step="0.01" value={monthlyBudgetInput} onChange={e => setMonthlyBudgetInput(e.target.value)} required />
+                </div>
+                {totalCategoryBudget > 0 && totalCategoryBudget > parseFloat(monthlyBudgetInput || 0) && (
+                  <div style={{ background: '#fff1f0', padding: '12px', borderRadius: '4px', color: '#ff4d4f', fontSize: '12px' }}>
+                    ⚠️ 注意：已分配的分类预算总和（¥{totalCategoryBudget.toFixed(2)}）大于您设置的月度总预算
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn" onClick={() => setShowMonthlyModal(false)}>取消</button>
                 <button type="submit" className="btn btn-primary">保存</button>
               </div>
             </form>

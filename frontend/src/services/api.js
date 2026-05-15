@@ -10,6 +10,7 @@ export const accountsAPI = {
   create: (data) => api.post('/accounts', data),
   update: (id, data) => api.put(`/accounts/${id}`, data),
   updateBalance: (id, balance) => api.patch(`/accounts/${id}/balance`, { balance }),
+  importBalances: (formData) => api.post('/accounts/import-balances', formData),
   delete: (id) => api.delete(`/accounts/${id}`),
 };
 
@@ -34,12 +35,15 @@ export const reportsAPI = {
   getCategoryBreakdown: (year, month) => api.get('/reports/category-breakdown', { params: { year, month } }),
   getYearlyTrend: (year) => api.get('/reports/yearly-trend', { params: { year } }),
   getNetWorth: () => api.get('/reports/net-worth'),
+  getNetWorthTrend: (year) => api.get('/reports/net-worth-trend', { params: { year } }),
   getAccountBalances: () => api.get('/reports/account-balances'),
 };
 
 export const budgetsAPI = {
   getAll: (month) => api.get('/budgets', { params: { month } }),
   getComparison: (month) => api.get('/budgets/comparison', { params: { month } }),
+  getMonthlyBudget: (month) => api.get('/budgets/monthly', { params: { month } }),
+  setMonthlyBudget: (amount, month) => api.post('/budgets/monthly', { amount, month }),
   create: (data) => api.post('/budgets', data),
   delete: (id) => api.delete(`/budgets/${id}`),
 };
