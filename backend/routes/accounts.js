@@ -93,7 +93,7 @@ router.post('/import-balances', upload.single('file'), (req, res) => {
         
         const row = results[index];
         const id = row.id || row.account_id || row.账户ID;
-        const balance = parseFloat(row.balance || row.余额 || row.balance);
+        const balance = parseFloat(row.balance || row.余额);
         
         if (!id || isNaN(balance)) {
           errors.push(`第${index + 1}行数据无效`);
